@@ -3,6 +3,12 @@ RUN apt-get update && apt-get install -y gcc curl && rm -rf /var/lib/apt/lists/*
 WORKDIR /app
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
+
+# Pre-install the Solidity compiler at BUILD time (internet is available here),
+# so main.py's runtime install_solc("0.8.20") call finds it already cached
+# and never tries to reach solc-bin.ethereum.org at pod startup.
+RUN python -c "import solcx; solcx.install_solc('0.8.20')"
+
 COPY . .
 EXPOSE 8000
 ENTRYPOINT ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
