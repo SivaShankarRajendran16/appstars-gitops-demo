@@ -36,6 +36,7 @@ spec:
   selector:
     app: backend-api
 ---
+# Scroll to the bottom of backend.yaml and verify this ServiceMonitor block matches perfectly:
 apiVersion: ://coreos.com
 kind: ServiceMonitor
 metadata:
@@ -50,3 +51,4 @@ spec:
   - port: metrics
     interval: 5s
     path: /metrics
+

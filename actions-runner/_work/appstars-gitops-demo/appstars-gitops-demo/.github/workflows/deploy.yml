@@ -1,0 +1,39 @@
+
+name: Continuous Integration & Deployment Loop
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  build-and-ship:
+    # Forces the job to run directly on your local host runner machine
+    runs-on: self-hosted
+    steps:
+    - name: Checkout Source Code
+      uses: actions/checkout@v4
+
+    - name: Synchronize Local Cluster Container Registry Space
+      shell: powershell
+      run: |
+        # 1. Point the active runner execution shell into the Minikube Docker environment
+        & minikube -p minikube docker-env | Invoke-Expression
+        
+        # 2. Compile frontend and backend images inside the local cluster network daemon
+        docker build -t localhost:5001/appstars-backend:${{ github.sha }} -f backend/Dockerfile.backend backend/
+        docker build -t localhost:5001/appstars-frontend:${{ github.sha }} -f frontend/Dockerfile.frontend frontend/
+
+    - name: Perform Package Optimization and GitOps Deployment
+      shell: powershell
+      run: |
+        helm lint ./helm/web3-app/
+        # Added --force and --replace flags to break past corrupted cache layers
+        helm upgrade --install appstars-release ./helm/web3-app/ --set imageTag=${{ github.sha }} --force --replace
+
+
+    - name: Verify Cluster State Rollout Stability
+      shell: powershell
+      run: |
+        # 5. Ensure the application pods stabilize cleanly before completing the build job
+        kubectl rollout status deployment/web3-app-frontend --timeout=90s
+        kubectl rollout status deployment/web3-app-backend --timeout=90s
