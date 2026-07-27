@@ -1,4 +1,3 @@
-
 name: Continuous Integration & Deployment Loop
 
 on:
@@ -7,7 +6,6 @@ on:
 
 jobs:
   build-and-ship:
-    # Forces the job to run directly on your local host runner machine
     runs-on: self-hosted
     steps:
     - name: Checkout Source Code
@@ -16,25 +14,34 @@ jobs:
     - name: Synchronize Local Cluster Container Registry Space
       shell: powershell
       run: |
-        # 1. Point the active runner execution shell into the Minikube Docker environment
+        # 1. Locate backend and frontend subfolders while explicitly filtering out runner cache paths
+        $BACKEND_DIR = (Get-ChildItem -Path . -Filter "Dockerfile.backend" -Recurse | Where-Object { $_.FullName -notmatch "actions-runner" -and $_.FullName -notmatch "_work" } | Select-Object -First 1).Directory.FullName
+        $FRONTEND_DIR = (Get-ChildItem -Path . -Filter "Dockerfile.frontend" -Recurse | Where-Object { $_.FullName -notmatch "actions-runner" -and $_.FullName -notmatch "_work" } | Select-Object -First 1).Directory.FullName
+        
+        Write-Output "Target Backend Path: $BACKEND_DIR"
+        Write-Output "Target Frontend Path: $FRONTEND_DIR"
+
+        # 2. Bind active shell runner context to Minikube's Docker engine space
         & minikube -p minikube docker-env | Invoke-Expression
         
-        # 2. Compile frontend and backend images inside the local cluster network daemon
-        docker build -t localhost:5001/appstars-backend:${{ github.sha }} -f backend/Dockerfile.backend backend/
-        docker build -t localhost:5001/appstars-frontend:${{ github.sha }} -f frontend/Dockerfile.frontend frontend/
+        # 3. Compile clean images by targeting the authenticated paths
+        docker build -t localhost:5001/appstars-backend:${{ github.sha }} -f "$BACKEND_DIR\Dockerfile.backend" "$BACKEND_DIR"
+        docker build -t localhost:5001/appstars-frontend:${{ github.sha }} -f "$FRONTEND_DIR\Dockerfile.frontend" "$FRONTEND_DIR"
 
     - name: Perform Package Optimization and GitOps Deployment
       shell: powershell
       run: |
-        # 3. Structural syntax check for Helm parameters
-        helm lint ./helm/web3-app/
+        # 4. Locate your true Helm Chart path while filtering out nested historical caches
+        $CHART_PATH = (Get-ChildItem -Path . -Filter "Chart.yaml" -Recurse | Where-Object { $_.FullName -notmatch "actions-runner" -and $_.FullName -notmatch "_work" } | Select-Object -First 1).Directory.FullName
+        Write-Output "Verified Clean Helm Chart location at: $CHART_PATH"
         
-        # 4. Trigger rolling upgrade rollout replacing image tags with the specific commit SHA
-        helm upgrade --install appstars-release ./helm/web3-app/ --set imageTag=${{ github.sha }}
+        # 5. Execute structural validations and trigger fresh rollout deployments
+        helm lint "$CHART_PATH"
+        helm upgrade --install appstars-release "$CHART_PATH" --set imageTag=${{ github.sha }} --force
 
     - name: Verify Cluster State Rollout Stability
       shell: powershell
       run: |
-        # 5. Ensure the application pods stabilize cleanly before completing the build job
+        # 6. Ensure deployment services reach a verified healthy running phase
         kubectl rollout status deployment/web3-app-frontend --timeout=90s
         kubectl rollout status deployment/web3-app-backend --timeout=90s

@@ -12,7 +12,7 @@ function App() {
     e.preventDefault();
     setMessage(''); setAiStatus(''); setTxHash('');
     try {
-      const response = await fetch('http://192.168.49', {
+      const response = await fetch('/api/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username, password, password_attempts: parseInt(attempts) })

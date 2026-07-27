@@ -32,12 +32,13 @@ metadata:
 spec:
   ports:
   - port: 8000
+    targetPort: 8000
     name: metrics
   selector:
     app: backend-api
 ---
 # Scroll to the bottom of backend.yaml and verify this ServiceMonitor block matches perfectly:
-apiVersion: ://coreos.com
+apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
   name: appstars-api-monitor
@@ -51,4 +52,3 @@ spec:
   - port: metrics
     interval: 5s
     path: /metrics
-

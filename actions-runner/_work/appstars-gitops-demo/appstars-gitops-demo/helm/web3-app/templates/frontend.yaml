@@ -16,6 +16,8 @@ spec:
       - name: ui
         image: localhost:5001/appstars-frontend:{{ .Values.imageTag }}
         imagePullPolicy: IfNotPresent
+        ports:
+          - containerPort: 80
 ---
 apiVersion: v1
 kind: Service
