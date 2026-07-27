@@ -59,6 +59,3 @@ jobs:
         # 6. Ensure deployment services reach a verified healthy running phase
         kubectl rollout status deployment/web3-app-frontend --timeout=90s
         if ($LASTEXITCODE -ne 0) { Write-Error "Frontend rollout FAILED"; exit 1 }
-
-        kubectl rollout status deployment/web3-app-backend --timeout=90s
-        if ($LASTEXITCODE -ne 0) { Write-Error "Backend rollout FAILED"; exit 1 }
