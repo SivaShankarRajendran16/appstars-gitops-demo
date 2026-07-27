@@ -5,9 +5,9 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Vendor the solc binary (downloaded once on a machine with internet access,
-# committed to the repo under backend/vendor/) so the build and runtime
-# never need to reach solc-bin.ethereum.org.
-COPY vendor/solc-v0.8.20 /root/.solcx/solc-v0.8.20
+# committed to the repo) so the build and runtime never need to reach
+# solc-bin.ethereum.org.
+COPY solc-v0.8.20 /root/.solcx/solc-v0.8.20
 RUN chmod +x /root/.solcx/solc-v0.8.20
 
 COPY . .
