@@ -1,0 +1,47 @@
+name: Continuous Integration & Deployment Loop
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  build-and-ship:
+    runs-on: self-hosted
+    steps:
+    - name: Checkout Source Code
+      uses: actions/checkout@v4
+
+    - name: Synchronize Local Cluster Container Registry Space
+      shell: powershell
+      run: |
+        # 1. Target explicit relative folders
+        $BACKEND_DIR = Join-Path $PWD "backend"
+        $FRONTEND_DIR = Join-Path $PWD "frontend"
+        
+        Write-Output "Target Backend Path: $BACKEND_DIR"
+        Write-Output "Target Frontend Path: $FRONTEND_DIR"
+
+        # 2. Bind active shell runner context to Minikube's Docker engine space
+        & minikube -p minikube docker-env | Invoke-Expression
+        
+        # 3. Compile clean images by targeting the authenticated paths directly
+        docker build -t localhost:5001/appstars-backend:${{ github.sha }} -f "$BACKEND_DIR\Dockerfile.backend" "$BACKEND_DIR"
+        docker build -t localhost:5001/appstars-frontend:${{ github.sha }} -f "$FRONTEND_DIR\Dockerfile.frontend" "$FRONTEND_DIR"
+
+    - name: Perform Package Optimization and GitOps Deployment
+      shell: powershell
+      run: |
+        # 4. Target the exact chart location layout
+        $CHART_PATH = Join-Path $PWD "helm\web3-app"
+        Write-Output "Verified Clean Helm Chart location at: $CHART_PATH"
+        
+        # 5. Execute validations and deploy everything locally without relying on the internet
+        helm lint "$CHART_PATH"
+        helm upgrade --install appstars-release "$CHART_PATH" --set imageTag=${{ github.sha }} --force-replace
+
+    - name: Verify Cluster State Rollout Stability
+      shell: powershell
+      run: |
+        # 6. Ensure deployment services reach a verified healthy running phase
+        kubectl rollout status deployment/web3-app-frontend --timeout=90s
+        kubectl rollout status deployment/web3-app-backend --timeout=90s

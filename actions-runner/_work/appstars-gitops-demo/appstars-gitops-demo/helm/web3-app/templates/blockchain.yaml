@@ -1,0 +1,31 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: web3-app-rpc-node
+spec:
+  serviceName: "web3-app-rpc-service"
+  replicas: 1
+  selector:
+    matchLabels:
+      app: rpc-node
+  template:
+    metadata:
+      labels:
+        app: rpc-node
+    spec:
+      containers:
+      - name: anvil
+        image: ghcr.io/foundry-rs/foundry:latest
+        args: ["anvil", "--host", "0.0.0.0", "--port", "8545"]
+        ports:
+        - containerPort: 8545
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: web3-app-rpc-service
+spec:
+  ports:
+  - port: 8545
+  selector:
+    app: rpc-node

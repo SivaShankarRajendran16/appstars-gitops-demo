@@ -1,0 +1,11 @@
+﻿{
+  "agentId": 2,
+  "agentName": "DESKTOP-QRN1DH7",
+  "poolId": 1,
+  "poolName": "Default",
+  "serverUrl": "https://pipelinesghubeus26.actions.githubusercontent.com/vCW1ur2HeIQqmuX8ek4kpHjuvt94Y9SHKFwGArIGB3SadhPXxp/",
+  "gitHubUrl": "https://github.com/SivaShankarRajendran16/appstars-gitops-demo",
+  "workFolder": "_work",
+  "useV2Flow": true,
+  "serverUrlV2": "https://broker.actions.githubusercontent.com/"
+}
