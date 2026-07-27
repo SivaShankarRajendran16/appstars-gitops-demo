@@ -4,10 +4,11 @@ WORKDIR /app
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Pre-install the Solidity compiler at BUILD time (internet is available here),
-# so main.py's runtime install_solc("0.8.20") call finds it already cached
-# and never tries to reach solc-bin.ethereum.org at pod startup.
-RUN python -c "import solcx; solcx.install_solc('0.8.20')"
+# Vendor the solc binary (downloaded once on a machine with internet access,
+# committed to the repo under backend/vendor/) so the build and runtime
+# never need to reach solc-bin.ethereum.org.
+COPY vendor/solc-v0.8.20 /root/.solcx/solc-v0.8.20
+RUN chmod +x /root/.solcx/solc-v0.8.20
 
 COPY . .
 EXPOSE 8000
